@@ -11,8 +11,3 @@
     "start": "netlify dev"
   }
 }
-{
-  "description": "A Netlify project to track Google Sheets data",
-  "author": "Your Name",
-  "license": "MIT"
-}
