@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redirecionando...</title>
+    <script>
+        // Altere aqui para o ID do destinatário (ex: OI1, OI2...)
+        const recipientId = 'OI1';
+
+        // Monta os parâmetros para enviar
+        const params = new URLSearchParams();
+        params.set('id', recipientId);
+        params.set('platform', navigator.platform);
+        params.set('screen', `${screen.width}x${screen.height}`);
+        params.set('timezone', Intl.DateTimeFormat().resolvedOptions().timeZone);
+        params.set('language', navigator.language || navigator.userLanguage);
+
+        // URL da função serverless no Netlify
+        const baseUrl = 'https://ataspublicaspcb.netlify.app/.netlify/functions/track';
+
+        // Redireciona para a função com os dados
+        window.location.href = `${baseUrl}?${params.toString()}`;
+    </script>
+</head>
+
+<body>
+    <p>Carregando e redirecionando, aguarde...</p>
+</body>
+
+</html>
