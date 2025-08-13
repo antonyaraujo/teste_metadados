@@ -59,9 +59,9 @@ export const handler = async function (event, context) {
   }
 
   const destinos = {
-    OI1: "https://drive.google.com/file/d/abc123/view",
-    OI2: "https://drive.google.com/file/d/def456/view",
-    OI3: "https://drive.google.com/file/d/ghi789/view",
+    OI1: "https://docs.google.com/document/d/1hPmEIZIt45-Qw5EaB7RSUykdZjXWTa3Jo2T8Crohxg8/edit?usp=sharing",
+    OI2: "https://docs.google.com/document/d/1hPmEIZIt45-Qw5EaB7RSUykdZjXWTa3Jo2T8Crohxg8/edit?usp=sharing",
+    OI3: "https://docs.google.com/document/d/1hPmEIZIt45-Qw5EaB7RSUykdZjXWTa3Jo2T8Crohxg8/edit?usp=sharing",
   };
 
   const destino = destinos[recipientId] || "https://google.com";
