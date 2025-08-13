@@ -1,60 +1,71 @@
-exports.handler = async function (event, context) {
-  // Pega o ID da query string
-  const recipientId = event.queryStringParameters?.id || "desconhecido";
+import { google } from 'googleapis';
 
-  // Cabeçalhos
-  const headers = event.headers || {};
+const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 
-  // User-Agent
-  const userAgent = headers["user-agent"] || "desconhecido";
+let sheetsClient;
 
-  // IP (Netlify usa vários headers)
-  const ip =
-    headers["client-ip"] ||
-    headers["x-forwarded-for"]?.split(",")[0].trim() ||
-    event.requestContext?.identity?.sourceIp || // fallback
-    "desconhecido";
+function getSheetsClient() {
+  if (sheetsClient) return sheetsClient;
 
-  // Idioma do navegador
-  const language = headers["accept-language"] || "desconhecido";
+  sheetsClient = new google.auth.JWT(
+    process.env.GOOGLE_CLIENT_EMAIL,
+    null,
+    (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+    SCOPES
+  );
 
-  // Dados extras enviados via query params (screen, platform, timezone)
-  // Por segurança, pode passar esses dados pelo link, ex:
-  // https://site.netlify.app/.netlify/functions/track?id=OI1&platform=Windows&screen=1920x1080&timezone=America/Sao_Paulo
+  return sheetsClient;
+}
 
-  const platform = event.queryStringParameters?.platform || "desconhecido";
-  const screen = event.queryStringParameters?.screen || "desconhecido";
-  const timezone = event.queryStringParameters?.timezone || "desconhecido";
+export const handler = async function(event, context) {
+  const sheetsAuth = getSheetsClient();
+  const sheets = google.sheets({ version: 'v4', auth: sheetsAuth });
 
+  // Extrai dados do request
+  const params = event.queryStringParameters || {};
+
+  const recipientId = params.id || 'desconhecido';
+  const ip = event.headers['x-forwarded-for']?.split(',')[0] || 'desconhecido';
+  const userAgent = event.headers['user-agent'] || 'desconhecido';
+  const language = event.headers['accept-language'] || 'desconhecido';
+  const platform = params.platform || 'desconhecido';
+  const screen = params.screen || 'desconhecido';
+  const timezone = params.timezone || 'desconhecido';
   const timestamp = new Date().toISOString();
 
-  // Log no console (pode trocar para integração com DB/API)
-  console.log(`--- Novo clique capturado ---`);
-  console.log(`Timestamp: ${timestamp}`);
-  console.log(`ID: ${recipientId}`);
-  console.log(`IP: ${ip}`);
-  console.log(`User-Agent: ${userAgent}`);
-  console.log(`Idioma: ${language}`);
-  console.log(`Plataforma: ${platform}`);
-  console.log(`Resolução: ${screen}`);
-  console.log(`Fuso horário: ${timezone}`);
-  console.log(`-----------------------------`);
+  const sheetId = process.env.GOOGLE_SHEET_ID;
+
+  // Dados para inserir na planilha, linha por linha
+  const values = [
+    [timestamp, recipientId, ip, userAgent, language, platform, screen, timezone],
+  ];
+
+  try {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: sheetId,
+      range: 'A1:H1',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values },
+    });
+  } catch (error) {
+    console.error('Erro ao salvar no Google Sheets:', error);
+    // mesmo se der erro, continua para redirecionar
+  }
 
   // Mapear IDs para URLs reais
   const destinos = {
-    OI1: "https://drive.google.com/file/d/abc123/view",
-    OI2: "https://drive.google.com/file/d/def456/view",
-    OI3: "https://drive.google.com/file/d/ghi789/view",
+    'OI1': 'https://drive.google.com/file/d/abc123/view',
+    'OI2': 'https://drive.google.com/file/d/def456/view',
+    'OI3': 'https://drive.google.com/file/d/ghi789/view',
   };
 
-  const destino = destinos[recipientId] || "https://google.com";
+  const destino = destinos[recipientId] || 'https://google.com';
 
-  // Retorna redirecionamento HTTP 302
   return {
     statusCode: 302,
     headers: {
       Location: destino,
-      "Cache-Control": "no-cache",
+      'Cache-Control': 'no-cache',
     },
   };
 };
